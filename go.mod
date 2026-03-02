@@ -1,6 +1,6 @@
 module github.com/mmarting/exifray
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/fatih/color v1.18.0
