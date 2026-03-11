@@ -108,7 +108,9 @@ func newHTTPClient(cfg *Config) *http.Client {
 
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   cfg.Timeout,
+		// No global Timeout here — each request uses context.WithTimeout instead.
+		// A global Timeout kills the entire request (including body read), which
+		// causes failures on sources returning large responses (Wayback, crt.sh).
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 5 {
 				return http.ErrUseLastResponse
