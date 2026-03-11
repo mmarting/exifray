@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/xml"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 	"unicode/utf16"
 	"unicode/utf8"
 
@@ -18,8 +20,37 @@ import (
 
 const maxFileSize = 50 * 1024 * 1024 // 50MB
 
-// extractMetadata fetches a URL and extracts metadata based on file type.
-func extractMetadata(url string, client *http.Client) MetadataResult {
+// extractMetadata fetches a URL with retry logic for transient errors.
+func extractMetadata(url string, client *http.Client, timeout time.Duration, maxRetries int, retryDelay time.Duration) MetadataResult {
+	var result MetadataResult
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		result = extractMetadataOnce(url, client, timeout)
+		if result.Error == "" || !isRetryableError(result.Error) {
+			return result
+		}
+		if attempt < maxRetries {
+			time.Sleep(retryDelay * time.Duration(attempt+1))
+		}
+	}
+	return result
+}
+
+// isRetryableError returns true for transient errors worth retrying:
+// timeouts, client cancellations, and HTTP 429/502/503/504 responses.
+func isRetryableError(errStr string) bool {
+	return strings.Contains(errStr, "deadline exceeded") ||
+		strings.Contains(errStr, "timeout") ||
+		strings.Contains(errStr, "i/o timeout") ||
+		strings.Contains(errStr, "request canceled") ||
+		strings.Contains(errStr, "connection reset") ||
+		strings.Contains(errStr, "HTTP 429") ||
+		strings.Contains(errStr, "HTTP 502") ||
+		strings.Contains(errStr, "HTTP 503") ||
+		strings.Contains(errStr, "HTTP 504")
+}
+
+// extractMetadataOnce fetches a URL and extracts metadata based on file type.
+func extractMetadataOnce(url string, client *http.Client, timeout time.Duration) MetadataResult {
 	result := MetadataResult{
 		URL:    url,
 		Fields: make(map[string]string),
@@ -27,7 +58,10 @@ func extractMetadata(url string, client *http.Client) MetadataResult {
 
 	ext := strings.ToLower(path.Ext(urlPath(url)))
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		result.Error = err.Error()
 		return result

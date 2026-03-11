@@ -69,6 +69,8 @@ type Config struct {
 	Domains    []string
 	Workers    int
 	Timeout    time.Duration
+	MaxRetries int
+	RetryDelay time.Duration
 	Verbose    bool
 	Quiet      bool
 	JSON       bool
@@ -78,6 +80,7 @@ type Config struct {
 	Extensions []string
 	Sources    []string
 	ShowURLs   bool
+	URLsFile   string
 }
 
 // Default file extensions to look for.
