@@ -19,6 +19,8 @@ Exifray is a Go tool that discovers publicly accessible files on a target domain
 - [Examples](#examples)
 - [Configuration](#configuration)
 - [Author](#author)
+- [Changelog](#changelog)
+- [Contributors](#contributors)
 - [License](#license)
 
 ## How It Works
@@ -247,6 +249,10 @@ google_cx=""
 - [Website](https://mmartin.me/)
 - [LinkedIn](https://www.linkedin.com/in/martinmarting/)
 - [GitHub](https://github.com/mmarting)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes between versions.
 
 ## Contributors
 
