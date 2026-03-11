@@ -23,9 +23,9 @@ Exifray is a Go tool that discovers publicly accessible files on a target domain
 
 ## How It Works
 
-1. **Discovery** — Queries multiple sources (passive archives, search engines, web scraping) to find file URLs associated with the target domain.
+1. **Discovery** — Queries multiple sources (passive archives, search engines, web scraping) to find file URLs associated with the target domain. Alternatively, accepts a file with URLs directly via `-u` to skip discovery entirely.
 2. **Deduplication** — Merges results from all sources, removes duplicates, and filters by file extension.
-3. **Metadata Extraction** — Downloads each file, extracts metadata in memory (EXIF, PDF info, OOXML/ODF properties, XMP, HTTP headers), and discards the file. Nothing is saved to disk.
+3. **Metadata Extraction** — Downloads each file, extracts metadata in memory (EXIF, PDF info, OOXML/ODF properties, XMP, HTTP headers), and discards the file. Nothing is saved to disk. Transient errors (timeouts, 502/503) are retried automatically with linear backoff.
 4. **Analysis** — Scans extracted metadata for interesting findings: usernames, email addresses, GPS coordinates, internal paths, software versions, printer models, serial numbers, and internal URLs.
 5. **Output** — Presents deduplicated findings grouped by category, with optional JSON output and file export.
 
@@ -92,10 +92,13 @@ exifray -h
 
 | Flag | Long Flag | Description | Default |
 |------|-----------|-------------|---------|
-| `-d` | `--domain` | Target domain | **(required unless `-l` or stdin)** |
+| `-d` | `--domain` | Target domain | **(required unless `-l`, `-u` or stdin)** |
 | `-l` | `--list` | File with list of domains | — |
+| `-u` | `--urls` | File with list of URLs (skip discovery) | — |
 | `-w` | `--workers` | Number of concurrent workers | `20` |
 | | `--timeout` | HTTP timeout in seconds | `15` |
+| | `--max-retries` | Max retries on transient errors | `2` |
+| | `--retry-delay` | Retry delay in seconds | `2` |
 | `-v` | `--verbose` | Enable verbose output | `false` |
 | `-q` | `--quiet` | Silent mode: findings only, one per line | `false` |
 | | `--json` | Output results as JSON | `false` |
@@ -165,6 +168,31 @@ Rate-limit requests:
 exifray -d example.com --rate-limit 5
 ```
 
+Direct URL input (skip discovery, extract metadata only):
+
+```sh
+exifray --urls file_urls.txt --show-urls
+```
+
+Use URLs from other recon tools:
+
+```sh
+gau example.com | grep -E '\.(pdf|docx|xlsx)$' > urls.txt
+exifray --urls urls.txt
+```
+
+Increase retries and timeout for slow sources:
+
+```sh
+exifray -d example.com --max-retries 3 --timeout 30
+```
+
+Disable retries (original behavior):
+
+```sh
+exifray -d example.com --max-retries 0
+```
+
 ### Piping into exifray
 
 Reads domains from stdin when piped, one per line:
@@ -219,6 +247,10 @@ google_cx=""
 - [Website](https://mmartin.me/)
 - [LinkedIn](https://www.linkedin.com/in/martinmarting/)
 - [GitHub](https://github.com/mmarting)
+
+## Contributors
+
+- [six2dez](https://github.com/six2dez) — Retry with backoff and direct URL input ([#1](https://github.com/mmarting/exifray/pull/1))
 
 ## License
 
