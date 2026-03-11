@@ -3,7 +3,7 @@ package main
 import "time"
 
 // Version info
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 // Severity levels for findings
 type Severity string

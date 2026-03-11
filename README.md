@@ -5,7 +5,7 @@
 
 Exifray is a Go tool that discovers publicly accessible files on a target domain, extracts their metadata on-the-fly (without saving files to disk), and surfaces interesting findings — usernames, emails, GPS coordinates, internal paths, software versions, printer names, serial numbers, and more.
 
-**Current version: 1.0.0**
+**Current version: 1.1.0**
 
 ## Table of Contents
 
